@@ -1,0 +1,46 @@
+# —— Display & planting info —— #
+material: WHEAT_SEEDS
+display_name: "<dark_gray>Coal <gray>Seeds"
+lore:
+  - "<gray>Place it on"
+  - "<dark_gray>farmland <gray>to plant it."
+
+options:
+  bonemeal: true
+  place_on:
+    - FARMLAND
+
+grow_time: 30                        # seconds until harvest
+
+# —— Growth options —— #
+growth:
+  final_block: COAL_ORE
+
+# —— Everything that this yields —— #
+rewards:
+  - type: seed
+    chance: 100%
+    amount: 1-3
+
+  - type: item
+    chance: 100%
+    material: COAL
+    amount: 1-3
+
+  - type: exp
+    chance: 100%
+    amount: 100-500
+
+  - type: mcmmo_exp
+    chance: 100%
+    amount: 400-500
+
+  - type: money
+    chance: 50%
+    amount: 100-500
+
+  - type: command
+    chance: 10%
+    commands:
+      - "give {player} diamond 1"
+      - "eco give {player} 100"

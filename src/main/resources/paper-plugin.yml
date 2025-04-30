@@ -1,0 +1,22 @@
+name: WildCrops
+version: '${project.version}'
+main: me.monoto.customseeds.WildCrops
+api-version: '1.20'
+description: Wild Crops
+authors:
+  - Monoto
+
+dependencies:
+  server:
+    Vault:
+      load: AFTER
+      required: false
+      join-classpath: false
+    SuperiorSkyblock:
+      load: AFTER
+      required: false
+      join-classpath: false
+    mcMMO:
+      load: AFTER
+      required: false
+      join-classpath: false
