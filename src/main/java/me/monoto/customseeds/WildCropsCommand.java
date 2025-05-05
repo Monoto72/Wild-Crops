@@ -11,7 +11,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import me.monoto.customseeds.crops.*;
-import me.monoto.customseeds.gui.CropSeedLayoutMenuHolder;
+import me.monoto.customseeds.gui.CropSeedLayoutGui;
 import me.monoto.customseeds.utils.ItemManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -128,7 +128,7 @@ public class WildCropsCommand {
             return Command.SINGLE_SUCCESS;
         }
 
-        new CropSeedLayoutMenuHolder().open(player);
+        new CropSeedLayoutGui(0).open(player);
         return Command.SINGLE_SUCCESS;
     }
 

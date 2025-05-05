@@ -1,10 +1,12 @@
 name: WildCrops
-version: '${project.version}'
+version: '${version}'
 main: me.monoto.customseeds.WildCrops
 api-version: '1.20'
 description: Wild Crops
 authors:
   - Monoto
+
+loader: me.monoto.customseeds.WildCropsLoader
 
 dependencies:
   server:

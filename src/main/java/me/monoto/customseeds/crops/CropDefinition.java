@@ -24,9 +24,16 @@ public class CropDefinition {
     // Growth
     private final int baseGrowTime;
     private final Material finalBlock;
+    private final SoilPlacement placement;
+    private final int minLight;
 
     // Rewards
     private final List<Reward> rewards;
+
+    public enum SoilPlacement {
+        BELOW,   // e.g. wheat, beetroot, nether wart
+        SIDE     // e.g. cocoa pods
+    }
 
     public CropDefinition(
             String id,
@@ -38,6 +45,8 @@ public class CropDefinition {
             List<Material> placeOn,
             int baseGrowTime,
             Material finalBlock,
+            SoilPlacement placement,
+            int minLight,
             List<Reward> rewards
     ) {
         this.id            = id;
@@ -49,6 +58,8 @@ public class CropDefinition {
         this.placeOn       = placeOn;
         this.baseGrowTime  = baseGrowTime;
         this.finalBlock    = (finalBlock != null ? finalBlock : Material.FERN);
+        this.placement    = placement;
+        this.minLight     = minLight;
         this.rewards       = rewards;
     }
 
@@ -58,10 +69,11 @@ public class CropDefinition {
     public String getDisplayName() { return displayName; }
     public List<String> getLore() { return lore; }
     public boolean isBonemealAllowed() { return bonemeal; }
-    public List<Material> getPlaceOn() { return placeOn; }
     public int getBaseGrowTime() { return baseGrowTime; }
     public Material getFinalBlock() { return finalBlock; }
     public List<Reward> getRewards() { return rewards; }
+    public SoilPlacement getPlacement() { return placement; }
+    public int getMinLight() { return minLight;    }
 
     /** A helper class representing a crop reward. */
     public record Reward(String type, double chance, Material material, Range<Integer> amount, List<String> commands) { }
@@ -116,6 +128,17 @@ public class CropDefinition {
             loreList.add("<gray>Place it on");
             loreList.add("<dark_gray>farmland <gray>to plant it.");
         }
+
+        // —— determine placement automatically —— //
+        SoilPlacement placement;
+        if (seedMat == Material.COCOA_BEANS) {
+            placement = SoilPlacement.SIDE;
+        } else {
+            placement = SoilPlacement.BELOW;
+        }
+
+        // —— minLightLevel —— //
+        int minLight = cfg.getInt("options.min_light_level", 8);
 
         // —— bonemeal & place_on —— //
         boolean allowBone = cfg.getBoolean("options.bonemeal", false);
@@ -214,6 +237,8 @@ public class CropDefinition {
                 Collections.unmodifiableList(soils),
                 baseGrowTicks,
                 finalBlk,
+                placement,
+                minLight,
                 Collections.unmodifiableList(rewards)
         );
     }

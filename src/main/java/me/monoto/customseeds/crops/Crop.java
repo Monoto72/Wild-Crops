@@ -6,6 +6,10 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
+
+import java.util.List;
+import java.util.stream.Stream;
 
 public class Crop {
     private final CropDefinition definition;
@@ -102,6 +106,26 @@ public class Crop {
     }
 
     public boolean meetsGrowthRequirements() {
-        return isOnFarmland() && block.getLightLevel() >= 9;
+        if (!(block.getBlockData() instanceof Ageable)) return false;
+
+        Material below = block.getRelative(BlockFace.DOWN).getType();
+        Material cropType = block.getType();
+        boolean soilOk;
+
+        if (cropType == Material.NETHER_WART) {
+            soilOk = (below == Material.SOUL_SAND);
+
+        } else if (cropType == Material.COCOA) {
+            if (!(block.getBlockData() instanceof Directional dir)) return false;
+            BlockFace attachFace = dir.getFacing();
+            soilOk = (block.getRelative(attachFace).getType() == Material.JUNGLE_LOG);
+
+        } else {
+            soilOk = (below == Material.FARMLAND);
+        }
+
+        if (!soilOk) return false;
+
+        return block.getLightLevel() >= definition.getMinLight();
     }
 }

@@ -1,0 +1,56 @@
+plugins {
+    id 'java'
+    id 'xyz.jpenilla.run-paper' version '2.3.1'
+    id 'com.gradleup.shadow' version '9.0.0-beta12'
+}
+
+group = 'me.monoto'
+version = '0.9.5'
+description = 'Wild Crops'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    maven { url = 'https://oss.sonatype.org/content/groups/public/' }
+    maven { url = 'https://repo.bg-software.com/repository/api/' }
+    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://nexus.neetgames.com/repository/maven-releases/' }
+    maven { url = 'https://repo.triumphteam.dev/snapshots' }
+    maven { url = 'https://repo.xenondevs.xyz/releases' }
+}
+
+dependencies {
+    implementation 'org.bstats:bstats-bukkit:3.0.2'
+    implementation 'xyz.xenondevs.invui:invui:2.0.0-alpha.10'
+
+    compileOnly 'io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT'
+    compileOnly 'com.bgsoftware:SuperiorSkyblockAPI:2025.1'
+    compileOnly 'com.github.MilkBowl:VaultAPI:1.7.1'
+    compileOnly('com.gmail.nossr50.mcMMO:mcMMO:2.1.200') {
+        exclude group: 'com.sk89q.worldguard', module: 'worldguard-core'
+        exclude group: 'com.sk89q.worldguard', module: 'worldguard-legacy'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(21)
+}
+
+shadowJar {
+    relocate 'com.github.stefvanschie.inventoryframework', 'wildcrops.inventoryframework'
+    relocate 'org.bstats', 'wildcrops.bstats'
+}
+
+tasks.named('runServer') {
+    minecraftVersion('1.21.5')
+    jvmArgs("-Xmx2G", "-XX:+UseG1GC", "-XX:+UnlockExperimentalVMOptions", "--add-modules=java.xml")
+}
+
+processResources {
+    inputs.property("version", providers.provider { project.version.toString() })
+    filteringCharset = 'UTF-8'
+    filesMatching('paper-plugin.yml') {
+        expand("version": project.version.toString())
+    }
+}

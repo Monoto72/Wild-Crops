@@ -1,6 +1,5 @@
 package me.monoto.customseeds;
 
-import dev.triumphteam.gui.paper.builder.item.ItemBuilder;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import me.monoto.customseeds.crops.CropDefinitionRegistry;
 import me.monoto.customseeds.crops.CropGrowthScheduler;
@@ -14,6 +13,7 @@ import me.monoto.customseeds.utils.UpdateChecker;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
+import xyz.xenondevs.invui.InvUI;
 
 import java.util.Objects;
 
@@ -47,7 +47,9 @@ public final class WildCrops extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        System.out.println("🕵️ CraftLegacy warning likely coming up next — check stack trace if it does.");
         BlockCache.load();
+        InvUI.getInstance().setPlugin(this);
 
         int bstatID = 25412;
         int spigotID = 123916;
@@ -77,8 +79,6 @@ public final class WildCrops extends JavaPlugin {
         getServer().getPluginManager().registerEvents(placeListener, this);
         getServer().getPluginManager().registerEvents(new CropBlockListener(), this);
 
-        getServer().getPluginManager().registerEvents(new CropSeedMenuListener(), this);
-        //getServer().getPluginManager().registerEvents(new CropSettingsMenuListener(), this);
         getServer().getPluginManager().registerEvents(new CropDropsMenuListener(), this);
         getServer().getPluginManager().registerEvents(new CropTextMenuListener(), this);
 

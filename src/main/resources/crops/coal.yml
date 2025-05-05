@@ -7,8 +7,7 @@ lore:
 
 options:
   bonemeal: true
-  place_on:
-    - FARMLAND
+  min_light_level: 8
 
 grow_time: 30                        # seconds until harvest
 

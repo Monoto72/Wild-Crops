@@ -1,23 +1,23 @@
 package me.monoto.customseeds.gui;
 
-import dev.triumphteam.gui.paper.Gui;
 import me.monoto.customseeds.WildCrops;
 import me.monoto.customseeds.crops.CropConfigData;
 import me.monoto.customseeds.crops.CropDefinition;
 import me.monoto.customseeds.crops.CropDefinitionRegistry;
-import me.monoto.customseeds.gui.buttons.ChatInputButton;
-import me.monoto.customseeds.gui.buttons.SelectorButton;
-import me.monoto.customseeds.gui.buttons.ToggleButton;
+import me.monoto.customseeds.gui.items.BlockSelectorItem;
+import me.monoto.customseeds.gui.items.ChatInputItem;
+import me.monoto.customseeds.gui.items.FillerItem;
+import me.monoto.customseeds.gui.items.ToggleItem;
 import me.monoto.customseeds.utils.BlockCache;
 import me.monoto.customseeds.utils.ChatInput.ChatInputType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
+import xyz.xenondevs.invui.gui.Gui;
+import xyz.xenondevs.invui.window.Window;
 
-import java.util.Arrays;
-import java.util.List;
 
 public class CropSettingsGui {
 
@@ -32,80 +32,126 @@ public class CropSettingsGui {
     }
 
     private Gui createGui() {
-        return Gui.of(5)
-            .title(Component.text("Crop Settings"))
-            .component(component -> {
-                final var autoReplant = component.remember(false);
-                final var boneMeal = component.remember(false);
+        Gui gui = Gui.builder()
+                .setStructure(
+                        "# # # # # # # # #",
+                        "# 1 # a b c d e #",
+                        "# # # f g h i j #",
+                        "# # # k l m n o #",
+                        "# # # # # # # # #"
+                )
+                .addIngredient('#', new FillerItem(Material.GRAY_STAINED_GLASS_PANE))
+                .build();
+        // Toggle Items
+        gui.setItem('a', new ToggleItem("Auto Replant", Material.DIAMOND_HOE, TextColor.color(0x00FF00), false,
+                (player, click) -> player.sendMessage(Component.text("Toggled Auto Replant."))));
 
-                component.render(container -> {
-                    container.setItem(14, ToggleButton.create(
-                            "Auto Replant",
-                            Material.DIAMOND_HOE,
-                            TextColor.color(0x00FF00),
-                            autoReplant,
-                            (player, context) -> {
-                                player.sendMessage(Component.text("Replant: " + autoReplant));
-                            }
-                    ));
+        gui.setItem('b', new ToggleItem("Bone Meal", Material.BONE_MEAL, TextColor.color(0x00FF00), false,
+                (player, click) -> player.sendMessage(Component.text("Toggled Bone Meal."))));
 
-                    container.setItem(15, ToggleButton.create(
-                            "Bone Meal",
-                            Material.BONE_MEAL,
-                            TextColor.color(0x00FF00),
-                            boneMeal,
-                            (player, context) -> {
-                                player.sendMessage(Component.text("Bone Meal: " + boneMeal));
-                            }
-                    ));
-                });
-            }).statelessComponent(container -> {
-                container.setItem(13, ChatInputButton.create(
-                        "Set Grow Time",
-                        Material.CLOCK,
-                        TextColor.color(0xFFAA00),
-                        "Enter grow time in seconds (e.g., 1 - 86400):",
-                        ChatInputType.MAX_INT(1, 86400),
-                        (player1, time) -> {
-                            CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(cropType);
-                            if (data != null) {
-                                data.getConfig().set("grow_time", time);
-                                WildCrops.getInstance().getFileManager().saveCropConfig(cropType);
+        // Grow Time Input
+        gui.setItem('c', new ChatInputItem<>(
+                "Grow Time",
+                Material.CLOCK,
+                TextColor.color(0xFFAA00),
+                "Enter grow time in seconds (1 - 86400):",
+                ChatInputType.MAX_INT(1, 86400),
+                (player, time) -> {
+                    CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(cropType);
+                    if (data != null) {
+                        data.getConfig().set("grow_time", time);
+                        WildCrops.getInstance().getFileManager().saveCropConfig(cropType);
+                        CropDefinition newDef = CropDefinition.fromConfig(data.getFileNameWithoutExtension(), data.getConfig());
+                        CropDefinitionRegistry.update(cropType, newDef);
+                    }
+                    Bukkit.getScheduler().runTask(WildCrops.getInstance(), () -> new CropSettingsGui(cropType).open(player));
+                }));
 
-                                CropDefinition newDef = CropDefinition.fromConfig(data.getFileNameWithoutExtension(), data.getConfig());
-                                CropDefinitionRegistry.update(cropType, newDef);
-                            }
+        // Seed Item
+        gui.setItem('d', new BlockSelectorItem(
+                "Seed Item",
+                def.getSeedMaterial(),
+                TextColor.color(0x00AA00),
+                (player, selected) -> {
+                    CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(cropType);
+                    if (data != null) {
+                        data.getConfig().set("material", selected.name());
+                        WildCrops.getInstance().getFileManager().saveCropConfig(cropType);
+                        CropDefinition newDef = CropDefinition.fromConfig(data.getFileNameWithoutExtension(), data.getConfig());
+                        CropDefinitionRegistry.update(cropType, newDef);
+                    }
+                    Bukkit.getScheduler().runTask(WildCrops.getInstance(), () -> new CropSettingsGui(cropType).open(player));
+                },
+                BlockCache.getCrops()
+        ));
 
-                            new CropSettingsGui(cropType).open(player1);
-                        }
-                ));
+        // EXP Reward Input
+        gui.setItem('e', new ChatInputItem<>(
+                "EXP Reward",
+                Material.CLOCK,
+                TextColor.color(0xFFAA00),
+                "Enter EXP reward (e.g., 300):",
+                ChatInputType.INT,
+                (player, exp) -> {
+                    // TODO: store exp
+                }));
 
-                container.setItem(12, SelectorButton.create(
-                        "Set a Final Block",
-                        def.getFinalBlock(),
-                        TextColor.color(0x00AA00),
-                        "Choose a Final Block",
-                        BlockCache.getPlaceableBlocks(),
-                        (player, selectedItem) -> {
-                            CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(cropType);
-                            if (data != null) {
-                                data.getConfig().set("growth.final_block", selectedItem.getType().name());
-                                WildCrops.getInstance().getFileManager().saveCropConfig(cropType);
+        // Final Block Selector
+        gui.setItem('f', new BlockSelectorItem(
+                "Final Block",
+                def.getFinalBlock(),
+                TextColor.color(0x00AA00),
+                (player, selected) -> {
+                    CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(cropType);
+                    if (data != null) {
+                        data.getConfig().set("growth.final_block", selected.name());
+                        WildCrops.getInstance().getFileManager().saveCropConfig(cropType);
+                        CropDefinition newDef = CropDefinition.fromConfig(data.getFileNameWithoutExtension(), data.getConfig());
+                        CropDefinitionRegistry.update(cropType, newDef);
+                    }
+                    Bukkit.getScheduler().runTask(WildCrops.getInstance(), () -> new CropSettingsGui(cropType).open(player));
+                },
+                BlockCache.getPlaceableItems()
+        ));
 
-                                CropDefinition newDef = CropDefinition.fromConfig(data.getFileNameWithoutExtension(), data.getConfig());
-                                CropDefinitionRegistry.update(cropType, newDef);
-                            }
-                        },
-                        cropType
-                ));
-            }).build();
+        // Money Reward
+        gui.setItem('g', new ChatInputItem<>(
+                "Money Reward",
+                Material.GOLD_INGOT,
+                TextColor.color(0xFFAA00),
+                "Enter money reward (e.g., 300):",
+                ChatInputType.INT,
+                (player, amount) -> {
+                    // TODO: store amount
+
+                    Bukkit.getScheduler().runTask(WildCrops.getInstance(), () -> new CropSettingsGui(cropType).open(player));
+                }));
+
+        // McMMO Reward
+        gui.setItem('h', new ChatInputItem<>(
+                "McMMO Reward",
+                Material.ENCHANTED_BOOK,
+                TextColor.color(0xFFAA00),
+                "Enter McMMO EXP reward (e.g., 300):",
+                ChatInputType.INT,
+                (player, exp) -> {
+                    // TODO: store McMMO reward
+
+                    Bukkit.getScheduler().runTask(WildCrops.getInstance(), () -> new CropSettingsGui(cropType).open(player));
+                }));
+
+        return gui;
+    }
+
+    public void open(Player player) {
+        Window.builder()
+                .setViewer(player)
+                .setUpperGui(gui)
+                .setTitle("Crop Settings")
+                .open(player);
     }
 
     public String getCropType() {
         return cropType;
-    }
-
-    public void open(Player player) {
-        gui.open(player);
     }
 }
