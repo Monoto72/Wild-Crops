@@ -11,20 +11,21 @@ import xyz.xenondevs.invui.Click;
 import xyz.xenondevs.invui.item.AbstractItem;
 import xyz.xenondevs.invui.item.ItemBuilder;
 import xyz.xenondevs.invui.item.ItemProvider;
-import xyz.xenondevs.invui.window.Window;
+
+import java.util.function.Consumer;
 
 public class OpenGuiItem extends AbstractItem {
 
     private final String label;
     private final Material icon;
     private final TextColor labelColor;
-    private final Window newWindow;
+    private final Consumer<Player> openAction;
 
-    public OpenGuiItem(String label, Material icon, TextColor labelColor, Window newWindow) {
+    public OpenGuiItem(String label, Material icon, TextColor labelColor, Consumer<Player> openAction) {
         this.label = label;
         this.icon = icon;
         this.labelColor = labelColor;
-        this.newWindow = newWindow;
+        this.openAction = openAction;
     }
 
     @Override
@@ -36,6 +37,6 @@ public class OpenGuiItem extends AbstractItem {
 
     @Override
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull Click click) {
-        newWindow.open();
+        openAction.accept(player);
     }
 }

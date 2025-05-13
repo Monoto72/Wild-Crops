@@ -4,10 +4,7 @@ import me.monoto.customseeds.WildCrops;
 import me.monoto.customseeds.crops.CropConfigData;
 import me.monoto.customseeds.crops.CropDefinition;
 import me.monoto.customseeds.crops.CropDefinitionRegistry;
-import me.monoto.customseeds.gui.items.BlockSelectorItem;
-import me.monoto.customseeds.gui.items.ChatInputItem;
-import me.monoto.customseeds.gui.items.FillerItem;
-import me.monoto.customseeds.gui.items.ToggleItem;
+import me.monoto.customseeds.gui.items.*;
 import me.monoto.customseeds.utils.BlockCache;
 import me.monoto.customseeds.utils.ChatInput.ChatInputType;
 import net.kyori.adventure.text.Component;
@@ -42,6 +39,23 @@ public class CropSettingsGui {
                 )
                 .addIngredient('#', new FillerItem(Material.GRAY_STAINED_GLASS_PANE))
                 .build();
+
+        // Crop Physical Drops
+        gui.setItem('n', new OpenGuiItem(
+                "Crop Drops",
+                Material.CHEST,
+                TextColor.color(0x00AA00),
+                player -> new CropRewardsGui(cropType, true).open(player)
+        ));
+
+        // Crop Command Rewards
+        gui.setItem('o', new OpenGuiItem(
+                "Command Drops",
+                Material.COMMAND_BLOCK,
+                TextColor.color(0x00AA00),
+                player -> new CropRewardsGui(cropType, false).open(player)
+        ));
+
         // Toggle Items
         gui.setItem('a', new ToggleItem("Auto Replant", Material.DIAMOND_HOE, TextColor.color(0x00FF00), false,
                 (player, click) -> player.sendMessage(Component.text("Toggled Auto Replant."))));

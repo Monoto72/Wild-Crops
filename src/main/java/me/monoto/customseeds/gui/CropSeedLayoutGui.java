@@ -6,6 +6,7 @@ import me.monoto.customseeds.crops.CropDefinitionRegistry;
 import me.monoto.customseeds.gui.items.FillerItem;
 import me.monoto.customseeds.gui.items.PageNavItem;
 import me.monoto.customseeds.utils.ItemManager;
+import me.monoto.customseeds.utils.Utilities;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -13,14 +14,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
+import xyz.xenondevs.invui.Click;
 import xyz.xenondevs.invui.gui.Markers;
 import xyz.xenondevs.invui.gui.PagedGui;
-import xyz.xenondevs.invui.item.AbstractPagedGuiBoundItem;
 import xyz.xenondevs.invui.item.Item;
 import xyz.xenondevs.invui.item.ItemBuilder;
 import xyz.xenondevs.invui.window.Window;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -68,7 +68,7 @@ public class CropSeedLayoutGui {
                 .build();
     }
 
-    private BiConsumer<Item, xyz.xenondevs.invui.Click> buildClickHandler(String cropId) {
+    private BiConsumer<Item, Click> buildClickHandler(String cropId) {
         return (item, click) -> {
             Player player = click.player();
             ClickType type = click.clickType();
@@ -77,7 +77,7 @@ public class CropSeedLayoutGui {
                 new CropSettingsGui(cropId).open(player);
             } else if (type.isRightClick()) {
                 player.closeInventory();
-                String code = generateRandomCode();
+                String code = Utilities.generateRandomCode(5);
                 player.sendMessage(Component.text("To confirm deletion, type: ")
                         .append(Component.text(code).color(TextColor.color(0xFF474C)).decorate(TextDecoration.BOLD)));
 
@@ -106,16 +106,6 @@ public class CropSeedLayoutGui {
                         }));
             }
         };
-    }
-
-    private String generateRandomCode() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder(5);
-        for (int i = 0; i < 5; i++) {
-            sb.append(chars.charAt(rnd.nextInt(chars.length())));
-        }
-        return sb.toString();
     }
 
     private PagedGui<Item> buildPagedGui(List<Item> content) {

@@ -5,10 +5,7 @@ import org.apache.commons.lang3.Range;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CropDefinition {
     private final String id;
@@ -49,37 +46,72 @@ public class CropDefinition {
             int minLight,
             List<Reward> rewards
     ) {
-        this.id            = id;
-        this.cropType      = cropType;
-        this.seedMaterial  = seedMaterial;
-        this.displayName   = displayName;
-        this.lore          = lore;
-        this.bonemeal      = bonemeal;
-        this.placeOn       = placeOn;
-        this.baseGrowTime  = baseGrowTime;
-        this.finalBlock    = (finalBlock != null ? finalBlock : Material.FERN);
-        this.placement    = placement;
-        this.minLight     = minLight;
-        this.rewards       = rewards;
+        this.id = id;
+        this.cropType = cropType;
+        this.seedMaterial = seedMaterial;
+        this.displayName = displayName;
+        this.lore = lore;
+        this.bonemeal = bonemeal;
+        this.placeOn = placeOn;
+        this.baseGrowTime = baseGrowTime;
+        this.finalBlock = (finalBlock != null ? finalBlock : Material.FERN);
+        this.placement = placement;
+        this.minLight = minLight;
+        this.rewards = rewards;
     }
 
-    public String getId() { return id; }
-    public String getType() { return cropType; }
-    public Material getSeedMaterial() { return seedMaterial; }
-    public String getDisplayName() { return displayName; }
-    public List<String> getLore() { return lore; }
-    public boolean isBonemealAllowed() { return bonemeal; }
-    public int getBaseGrowTime() { return baseGrowTime; }
-    public Material getFinalBlock() { return finalBlock; }
-    public List<Reward> getRewards() { return rewards; }
-    public SoilPlacement getPlacement() { return placement; }
-    public int getMinLight() { return minLight;    }
+    public String getId() {
+        return id;
+    }
 
-    /** A helper class representing a crop reward. */
-    public record Reward(String type, double chance, Material material, Range<Integer> amount, List<String> commands) { }
+    public String getType() {
+        return cropType;
+    }
+
+    public Material getSeedMaterial() {
+        return seedMaterial;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public List<String> getLore() {
+        return lore;
+    }
+
+    public boolean isBonemealAllowed() {
+        return bonemeal;
+    }
+
+    public int getBaseGrowTime() {
+        return baseGrowTime;
+    }
+
+    public Material getFinalBlock() {
+        return finalBlock;
+    }
+
+    public List<Reward> getRewards() {
+        return rewards;
+    }
+
+    public SoilPlacement getPlacement() {
+        return placement;
+    }
+
+    public int getMinLight() {
+        return minLight;
+    }
+
+    /**
+     * A helper class representing a crop reward.
+     */
+    public record Reward(String type, double chance, Material material, Range<Integer> amount, List<String> commands) {
+    }
 
     private static Range<Integer> parseRange(String input) {
-        if (input == null) return Range.between(1,1);
+        if (input == null) return Range.between(1, 1);
         try {
             if (input.contains("-")) {
                 String[] parts = input.split("-");
@@ -91,7 +123,7 @@ public class CropDefinition {
                 return Range.between(val, val);
             }
         } catch (Exception ex) {
-            return Range.between(1,1);
+            return Range.between(1, 1);
         }
     }
 
@@ -142,6 +174,9 @@ public class CropDefinition {
 
         // —— bonemeal & place_on —— //
         boolean allowBone = cfg.getBoolean("options.bonemeal", false);
+
+        // I'm pretty sure we phased this out, this can stick for now. Maybe when we add custom tiles
+        // we can use this again. i.e. place_on: [diamond_ore, cobblestone] etc.
         List<Material> soils = new ArrayList<>();
         List<String> rawSoils = cfg.getStringList("options.place_on");
         if (rawSoils == null || rawSoils.isEmpty()) {
@@ -177,23 +212,34 @@ public class CropDefinition {
 
         // —— rewards —— //
         List<Reward> rewards = new ArrayList<>();
-        List<Map<?,?>> rawRewards = cfg.getMapList("rewards");
-        if (rawRewards.isEmpty()) {
-            // default: give seed back
-            rewards.add(new Reward("seed", 1.0, null, Range.between(1,1), null));
+        List<Map<String, Object>> rewardEntries = new ArrayList<>();
+        for (Map<?, ?> entry : cfg.getMapList("rewards")) {
+            Map<String, Object> newEntry = new HashMap<>();
+            for (Map.Entry<?, ?> e : entry.entrySet()) {
+                if (e.getKey() instanceof String key) {
+                    newEntry.put(key, e.getValue());
+                }
+            }
+            rewardEntries.add(newEntry);
+        }
+
+        if (rewardEntries.isEmpty()) {
+            rewards.add(new Reward("seed", 1.0, null, Range.between(1, 1), null));
         } else {
-            for (Map<?,?> entry : rawRewards) {
-                String type = entry.get("type") == null ? "" : entry.get("type").toString();
+            for (Map<String, Object> entry : rewardEntries) {
+                String type = entry.getOrDefault("type", "").toString();
                 double chance = 1.0;
                 if (entry.containsKey("chance")) {
                     try {
-                        String c = entry.get("chance").toString().replace("%","");
-                        chance = Double.parseDouble(c)/100.0;
-                    } catch (Exception ignored){}
+                        String c = entry.get("chance").toString().replace("%", "");
+                        chance = Double.parseDouble(c) / 100.0;
+                    } catch (Exception ignored) {
+                    }
                 }
                 Range<Integer> range = null;
                 Material mat = null;
                 List<String> cmds = null;
+
                 switch (type) {
                     case "seed":
                     case "exp":
@@ -202,26 +248,31 @@ public class CropDefinition {
                         range = parseRange(entry.get("amount") == null ? null : entry.get("amount").toString());
                         break;
                     case "item":
-                        String m = entry.get("material")==null?"":entry.get("material").toString();
+                        String m = entry.getOrDefault("material", "").toString();
                         try {
                             mat = Material.valueOf(m.toUpperCase());
                         } catch (Exception e) {
                             WildCrops.getInstance().getLogger()
-                                    .warning("[" + cropType + "] bad item material '"+m+"'");
+                                    .warning("[" + cropType + "] bad item material '" + m + "'");
                             continue;
                         }
-                        range = parseRange(entry.get("amount")==null?null:entry.get("amount").toString());
+                        range = parseRange(entry.get("amount") == null ? null : entry.get("amount").toString());
                         break;
                     case "command":
                         Object o = entry.get("commands");
                         if (o instanceof List<?> list) {
-                            //noinspection unchecked
-                            cmds = (List<String>)(List<?>)list;
+                            // No cast warning needed now because Map is <String, Object>
+                            cmds = new ArrayList<>();
+                            for (Object cmdObj : list) {
+                                if (cmdObj != null) {
+                                    cmds.add(cmdObj.toString());
+                                }
+                            }
                         }
                         break;
                     default:
                         WildCrops.getInstance().getLogger()
-                                .warning("[" + cropType + "] unknown reward type '"+type+"'");
+                                .warning("[" + cropType + "] unknown reward type '" + type + "'");
                         continue;
                 }
                 rewards.add(new Reward(type, chance, mat, range, cmds));

@@ -15,13 +15,12 @@ repositories {
     maven { url = 'https://repo.bg-software.com/repository/api/' }
     maven { url = 'https://jitpack.io' }
     maven { url = 'https://nexus.neetgames.com/repository/maven-releases/' }
-    maven { url = 'https://repo.triumphteam.dev/snapshots' }
     maven { url = 'https://repo.xenondevs.xyz/releases' }
 }
 
 dependencies {
     implementation 'org.bstats:bstats-bukkit:3.0.2'
-    implementation 'xyz.xenondevs.invui:invui:2.0.0-alpha.10'
+    implementation 'xyz.xenondevs.invui:invui:2.0.0-alpha.12'
 
     compileOnly 'io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT'
     compileOnly 'com.bgsoftware:SuperiorSkyblockAPI:2025.1'
@@ -38,7 +37,6 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 shadowJar {
-    relocate 'com.github.stefvanschie.inventoryframework', 'wildcrops.inventoryframework'
     relocate 'org.bstats', 'wildcrops.bstats'
 }
 
@@ -48,9 +46,10 @@ tasks.named('runServer') {
 }
 
 processResources {
-    inputs.property("version", providers.provider { project.version.toString() })
+    def props = [version: project.version]
+    inputs.properties(props)
     filteringCharset = 'UTF-8'
     filesMatching('paper-plugin.yml') {
-        expand("version": project.version.toString())
+        expand(props)
     }
 }

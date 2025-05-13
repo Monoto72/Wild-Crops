@@ -29,8 +29,7 @@ public class CropDropsMenuListener implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Inventory top = event.getView().getTopInventory();
-        if (!(top.getHolder() instanceof CropDropsMenuHolder)) return;
-        CropDropsMenuHolder menu = (CropDropsMenuHolder) top.getHolder();
+        if (!(top.getHolder() instanceof CropDropsMenuHolder menu)) return;
         Inventory menuInv = menu.getInventory();
         String cropType = menu.getCropType();
         Player player = (Player) event.getWhoClicked();
@@ -46,7 +45,8 @@ public class CropDropsMenuListener implements Listener {
             for (int i = START_SLOT; i <= END_SLOT; i++) {
                 ItemStack it = menuInv.getItem(i);
                 if (it == null || it.getType() == Material.AIR) {
-                    empty = i; break;
+                    empty = i;
+                    break;
                 }
             }
             if (empty < 0) {
@@ -66,14 +66,14 @@ public class CropDropsMenuListener implements Listener {
             WildCrops.getInstance().getChatInput().openChatInput(player,
                     "Enter drop range for " + mat.name() + " (e.g. 1-3):", input -> {
                         Range<Integer> nr = parseRange(input, defaultRange);
-                        if (nr.getMinimum()==0 && nr.getMaximum()==0) {
+                        if (nr.getMinimum() == 0 && nr.getMaximum() == 0) {
                             removeItemReward(cropType, idx);
                             menuInv.setItem(slot, new ItemStack(Material.AIR));
                             player.sendMessage(Component.text("Drop removed."));
                         } else {
                             updateItemReward(cropType, idx, mat, nr);
                             menuInv.setItem(slot, menu.createRewardItem(mat, nr));
-                            player.sendMessage(Component.text("Drop range updated to: " + nr.getMinimum()+"-"+nr.getMaximum()));
+                            player.sendMessage(Component.text("Drop range updated to: " + nr.getMinimum() + "-" + nr.getMaximum()));
                         }
                         new CropDropsMenuHolder(cropType).open(player);
                     }
@@ -90,17 +90,17 @@ public class CropDropsMenuListener implements Listener {
         }
 
         ItemStack clicked = menuInv.getItem(slot);
-        if (clicked == null || clicked.getType()==Material.AIR) return;
+        if (clicked == null || clicked.getType() == Material.AIR) return;
         int idx = slot - START_SLOT;
         Material mat = clicked.getType();
         Range<Integer> current = getItemRange(cropType, idx);
-        String defText = current.getMinimum()+"-"+current.getMaximum();
+        String defText = current.getMinimum() + "-" + current.getMaximum();
 
         if (event.getClick().isLeftClick()) {
             WildCrops.getInstance().getChatInput().openChatInput(player,
                     "Edit drop range for " + mat.name() + " (e.g. " + defText + "):", input -> {
                         Range<Integer> nr = parseRange(input, current);
-                        if (nr.getMinimum()==0 && nr.getMaximum()==0) {
+                        if (nr.getMinimum() == 0 && nr.getMaximum() == 0) {
                             removeItemReward(cropType, idx);
                             menuInv.setItem(slot, new ItemStack(Material.AIR));
                         } else {
@@ -125,35 +125,35 @@ public class CropDropsMenuListener implements Listener {
         String cropType = menu.getCropType();
 
         CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(cropType);
-        if (data==null) return;
+        if (data == null) return;
         YamlConfiguration config = data.getConfig();
 
         // ensure at least one item reward exists
-        List<Map<String,Object>> rewards = (List<Map<String,Object>>) (List<?>) config.getMapList("rewards");
+        List<Map<String, Object>> rewards = (List<Map<String, Object>>) (List<?>) config.getMapList("rewards");
         boolean hasItem = rewards.stream()
                 .anyMatch(m -> "item".equalsIgnoreCase((String) m.get("type")));
         if (!hasItem) {
-            updateItemReward(cropType, 0, Material.WHEAT_SEEDS, Range.between(1,3));
+            updateItemReward(cropType, 0, Material.WHEAT_SEEDS, Range.between(1, 3));
         }
     }
 
     private void updateItemReward(String type, int idx, Material mat, Range<Integer> range) {
         CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(type);
-        if (data==null) return;
+        if (data == null) return;
         YamlConfiguration config = data.getConfig();
-        List<Map<String,Object>> list = (List<Map<String,Object>>) (List<?>) config.getMapList("rewards");
+        List<Map<String, Object>> list = (List<Map<String, Object>>) (List<?>) config.getMapList("rewards");
         // collect existing item rewards
-        List<Map<String,Object>> items = list.stream()
-                .filter(m -> "item".equalsIgnoreCase((String)m.get("type")))
+        List<Map<String, Object>> items = list.stream()
+                .filter(m -> "item".equalsIgnoreCase((String) m.get("type")))
                 .collect(Collectors.toList());
         // remove all item rewards
-        list.removeIf(m -> "item".equalsIgnoreCase((String)m.get("type")));
+        list.removeIf(m -> "item".equalsIgnoreCase((String) m.get("type")));
         // ensure size
-        while (items.size() <= idx) items.add(Map.of("type","item"));
-        Map<String,Object> entry = items.get(idx);
-        entry.put("type","item");
+        while (items.size() <= idx) items.add(Map.of("type", "item"));
+        Map<String, Object> entry = items.get(idx);
+        entry.put("type", "item");
         entry.put("material", mat.name());
-        entry.put("amount", range.getMinimum()+"-"+range.getMaximum());
+        entry.put("amount", range.getMinimum() + "-" + range.getMaximum());
         // re-add with correct order
         list.addAll(entryPosition(idx, list.size()), items);
         config.set("rewards", list);
@@ -164,17 +164,17 @@ public class CropDropsMenuListener implements Listener {
 
     private void removeItemReward(String type, int idx) {
         CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(type);
-        if (data==null) return;
+        if (data == null) return;
         YamlConfiguration config = data.getConfig();
-        List<Map<String,Object>> list = (List<Map<String,Object>>) (List<?>) config.getMapList("rewards");
+        List<Map<String, Object>> list = (List<Map<String, Object>>) (List<?>) config.getMapList("rewards");
         // collect item entries and remove
-        List<Map<String,Object>> items = list.stream()
-                .filter(m -> "item".equalsIgnoreCase((String)m.get("type")))
+        List<Map<String, Object>> items = list.stream()
+                .filter(m -> "item".equalsIgnoreCase((String) m.get("type")))
                 .collect(Collectors.toList());
         if (idx < items.size()) {
             items.remove(idx);
         }
-        list.removeIf(m -> "item".equalsIgnoreCase((String)m.get("type")));
+        list.removeIf(m -> "item".equalsIgnoreCase((String) m.get("type")));
         list.addAll(items);
         config.set("rewards", list);
         WildCrops.getInstance().getFileManager().saveCropConfig(type);
@@ -185,15 +185,15 @@ public class CropDropsMenuListener implements Listener {
     @SuppressWarnings("unchecked")
     private Range<Integer> getItemRange(String type, int idx) {
         CropConfigData data = WildCrops.getInstance().getFileManager().getCropData(type);
-        if (data==null) return Range.between(1,3);
+        if (data == null) return Range.between(1, 3);
         YamlConfiguration config = data.getConfig();
-        List<Map<String,Object>> list = (List<Map<String,Object>>) (List<?>) config.getMapList("rewards");
-        List<Map<String,Object>> items = list.stream()
-                .filter(m -> "item".equalsIgnoreCase((String)m.get("type")))
+        List<Map<String, Object>> list = (List<Map<String, Object>>) (List<?>) config.getMapList("rewards");
+        List<Map<String, Object>> items = list.stream()
+                .filter(m -> "item".equalsIgnoreCase((String) m.get("type")))
                 .collect(Collectors.toList());
-        if (idx >= items.size()) return Range.between(1,3);
+        if (idx >= items.size()) return Range.between(1, 3);
         String amt = (String) items.get(idx).get("amount");
-        return parseRange(amt, Range.between(1,3));
+        return parseRange(amt, Range.between(1, 3));
     }
 
     private Range<Integer> parseRange(String input, Range<Integer> def) {
@@ -202,17 +202,19 @@ public class CropDropsMenuListener implements Listener {
                 String[] p = input.split("-");
                 int a = Integer.parseInt(p[0].trim());
                 int b = Integer.parseInt(p[1].trim());
-                return Range.between(a,b);
+                return Range.between(a, b);
             } else {
                 int v = Integer.parseInt(input.trim());
-                return Range.between(v,v);
+                return Range.between(v, v);
             }
         } catch (Exception e) {
             return def;
         }
     }
 
-    /** Utility to insert items at correct spot; here simply returns end to append. */
+    /**
+     * Utility to insert items at correct spot; here simply returns end to append.
+     */
     private int entryPosition(int idx, int size) {
         return size;
     }
