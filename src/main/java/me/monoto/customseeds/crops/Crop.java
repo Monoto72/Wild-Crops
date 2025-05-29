@@ -1,6 +1,5 @@
 package me.monoto.customseeds.crops;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -8,14 +7,7 @@ import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 
-import java.util.List;
-import java.util.stream.Stream;
-
-public class Crop {
-    private final CropDefinition definition;
-    private final Block block;
-    private final CropData data;
-
+public record Crop(CropDefinition definition, Block block, CropData data) {
     public Crop(CropDefinition definition, Block block, CropData data) {
         this.definition = definition;
         this.block = block;
@@ -37,8 +29,6 @@ public class Crop {
         }
         CropDefinition def = CropDefinitionRegistry.get(data.getCropType());
         if (def == null) {
-            Bukkit.getLogger().warning("No crop definition found for type: "
-                    + data.getCropType() + " at " + block.getLocation());
             return null;
         }
         return new Crop(def, block, data);
@@ -73,6 +63,7 @@ public class Crop {
                 data.setAge(nextAge);
                 ageable.setAge(nextAge);
                 block.setBlockData(ageable);
+                ChunkCropManager.updateCropData(block, data);
             } else {
                 block.setType(definition.getFinalBlock());
 
@@ -84,6 +75,7 @@ public class Crop {
 
                 data.setAge(maxAge);
                 data.setFullyGrown(true);
+                ChunkCropManager.updateCropData(block, data);
             }
         }
     }
@@ -91,18 +83,6 @@ public class Crop {
     private boolean isOnFarmland() {
         Block blockBelow = block.getRelative(BlockFace.DOWN);
         return blockBelow.getType() == Material.FARMLAND;
-    }
-
-    public CropDefinition getDefinition() {
-        return definition;
-    }
-
-    public Block getBlock() {
-        return block;
-    }
-
-    public CropData getData() {
-        return data;
     }
 
     public boolean meetsGrowthRequirements() {

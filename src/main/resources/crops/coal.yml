@@ -5,15 +5,13 @@ lore:
   - "<gray>Place it on"
   - "<dark_gray>farmland <gray>to plant it."
 
-options:
-  bonemeal: true
+# —— Setting options —— #
+settings:
+  bone_meal: true
   min_light_level: 8
-
-grow_time: 30                        # seconds until harvest
-
-# —— Growth options —— #
-growth:
   final_block: COAL_ORE
+  auto_replant: true
+  grow_time: 30                        # seconds until harvest
 
 # —— Everything that this yields —— #
 rewards:

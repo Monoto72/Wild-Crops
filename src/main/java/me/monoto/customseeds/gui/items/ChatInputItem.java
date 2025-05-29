@@ -24,14 +24,16 @@ public class ChatInputItem<T> extends AbstractItem {
     private final String promptText;
     private final ChatInputType<T> inputType;
     private final BiConsumer<Player, T> onInput;
+    private final Runnable onCancel;
 
-    public ChatInputItem(String label, Material icon, TextColor labelColor, String promptText, ChatInputType<T> inputType, BiConsumer<Player, T> onInput) {
+    public ChatInputItem(String label, Material icon, TextColor labelColor, String promptText, ChatInputType<T> inputType, BiConsumer<Player, T> onInput, Runnable onCancel) {
         this.label = label;
         this.icon = icon;
         this.labelColor = labelColor;
         this.promptText = promptText;
         this.inputType = inputType;
         this.onInput = onInput;
+        this.onCancel = onCancel;
     }
 
     @Override
@@ -44,7 +46,14 @@ public class ChatInputItem<T> extends AbstractItem {
     @Override
     public void handleClick(@NotNull ClickType clickType, Player player, @NotNull Click click) {
         player.closeInventory();
-        TypedChatInput.open(player, promptText, inputType, onInput);
-    }
+        TypedChatInput.open(
+                player,
+                promptText,
+                inputType,
+                onInput,
+                onCancel
+        );
 
+        notifyWindows();
+    }
 }

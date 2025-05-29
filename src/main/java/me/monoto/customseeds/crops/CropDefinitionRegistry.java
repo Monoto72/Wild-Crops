@@ -1,10 +1,10 @@
 package me.monoto.customseeds.crops;
 
 import me.monoto.customseeds.WildCrops;
+import org.apache.commons.lang3.Range;
 import org.bukkit.configuration.file.YamlConfiguration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.util.*;
 
 /**
  * Registry for all CropDefinitions, keyed by internal UUID.
@@ -23,6 +23,7 @@ public class CropDefinitionRegistry {
 
     /**
      * Loads crop definitions from a map of CropConfigData.
+     *
      * @param cropData Map of internal UUID to CropConfigData.
      */
     public static void load(Map<String, CropConfigData> cropData) {
@@ -70,5 +71,40 @@ public class CropDefinitionRegistry {
      */
     public static Map<String, CropDefinition> getDefinitions() {
         return Collections.unmodifiableMap(definitions);
+    }
+
+    /**
+     * Serialize a List<Reward> back into YAML-friendly List<Map<String,Object>>.
+     */
+    public static List<Map<String, Object>> serializeRewards(List<CropDefinition.Reward> rewards) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (CropDefinition.Reward r : rewards) {
+            Map<String, Object> m = new LinkedHashMap<>();
+
+            m.put("type", r.type());
+            m.put("chance", (int) (r.chance() * 100) + "%");
+            if (r.material() != null) {
+                m.put("material", r.material().name());
+            }
+
+            Range<Integer> range = r.amount() != null
+                    ? r.amount()
+                    : Range.between(1, 1);
+            if (Objects.equals(range.getMinimum(), range.getMaximum())) {
+                m.put("amount", range.getMinimum());
+            } else {
+                m.put("amount", range.getMinimum() + "-" + range.getMaximum());
+            }
+
+            if ("command".equalsIgnoreCase(r.type())) {
+                List<String> cmds = r.commands();
+                if (cmds != null && !cmds.isEmpty()) {
+                    m.put("commands", new ArrayList<>(cmds));
+                }
+            }
+
+            out.add(m);
+        }
+        return out;
     }
 }

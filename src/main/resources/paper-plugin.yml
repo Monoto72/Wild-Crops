@@ -11,14 +11,14 @@ loader: me.monoto.customseeds.WildCropsLoader
 dependencies:
   server:
     Vault:
-      load: AFTER
+      load: BEFORE
       required: false
-      join-classpath: false
-    SuperiorSkyblock:
-      load: AFTER
+      join-classpath: true
+    SuperiorSkyblock2:
+      load: BEFORE
       required: false
-      join-classpath: false
+      join-classpath: true
     mcMMO:
-      load: AFTER
+      load: BEFORE
       required: false
-      join-classpath: false
+      join-classpath: true

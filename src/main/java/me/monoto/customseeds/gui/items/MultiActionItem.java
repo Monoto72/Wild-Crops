@@ -1,6 +1,5 @@
 package me.monoto.customseeds.gui.items;
 
-import me.monoto.customseeds.gui.windows.BlockSearchWindow;
 import me.monoto.customseeds.utils.ClickAction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -14,42 +13,49 @@ import xyz.xenondevs.invui.item.AbstractItem;
 import xyz.xenondevs.invui.item.ItemBuilder;
 import xyz.xenondevs.invui.item.ItemProvider;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * An item which opens a block-picker window and uses shared ClickAction lore formatting.
+ * An item which displays one or more click-actions (in a fixed, given order),
+ * each with an optional "current value" in parentheses.
  */
-public class BlockSelectorItem extends AbstractItem {
+public class MultiActionItem extends AbstractItem {
 
     private final Component name;
     private final Material icon;
     private final TextColor color;
-    private final BiConsumer<Player, Material> onSelect;
-    private final List<Material> allowedMaterials;
+    private final BiConsumer<Player, Click> onClick;
+    private final List<ClickAction> actions;
 
-    public BlockSelectorItem(
-            String label,
+    /**
+     * @param name    display name
+     * @param icon    item material
+     * @param color   name color
+     * @param onClick handler for any click
+     * @param actions ordered list of Action entries (must have at least one)
+     */
+    public MultiActionItem(
+            Component name,
             Material icon,
-            TextColor labelColor,
-            BiConsumer<Player, Material> onSelect,
-            List<Material> allowedMaterials
+            TextColor color,
+            BiConsumer<Player, Click> onClick,
+            List<ClickAction> actions
     ) {
-        this.name = Component.text(label);
+        if (actions == null || actions.isEmpty())
+            throw new IllegalArgumentException("Must supply at least one action");
+        this.name = name;
         this.icon = icon;
-        this.color = labelColor;
-        this.onSelect = onSelect;
-        this.allowedMaterials = allowedMaterials;
+        this.color = color;
+        this.onClick = onClick;
+        this.actions = new ArrayList<>(actions);
     }
 
     @Override
     public @NotNull ItemProvider getItemProvider(@NotNull Player player) {
         ItemBuilder builder = new ItemBuilder(icon)
                 .setName(name.color(color).decoration(TextDecoration.ITALIC, false));
-
-        List<ClickAction> actions = List.of(
-                new ClickAction(ClickType.LEFT, "Edit block", icon.name())
-        );
 
         for (ClickAction action : actions) {
             Component prefix = Component.text(ClickAction.humanize(action.clickType) + ": ")
@@ -65,7 +71,8 @@ public class BlockSelectorItem extends AbstractItem {
                                         .color(TextColor.color(0xAAAAAA))
                         )
                         .append(action.currentValue.color(TextColor.color(0xAAAAAA)))
-                        .append(Component.text(")").color(TextColor.color(0xAAAAAA)));
+                        .append(Component.text(")")
+                                .color(TextColor.color(0xAAAAAA)));
             }
 
             builder.addLoreLines(line);
@@ -80,14 +87,7 @@ public class BlockSelectorItem extends AbstractItem {
             @NotNull Player player,
             @NotNull Click click
     ) {
-        BiConsumer<Player, Material> boundSelect = (ignored, mat) -> onSelect.accept(player, mat);
-
-        BlockSearchWindow.open(
-                player,
-                color,
-                allowedMaterials,
-                boundSelect
-        );
+        onClick.accept(player, click);
         notifyWindows();
     }
 }

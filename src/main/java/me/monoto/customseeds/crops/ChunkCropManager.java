@@ -13,9 +13,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.Map;
-
 import java.util.Iterator;
+import java.util.Map;
 
 public class ChunkCropManager {
 
@@ -134,7 +133,7 @@ public class ChunkCropManager {
     public static String serializeCropMap(Map<String, CropData> map) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, CropData> entry : map.entrySet()) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append("|");
             }
             CropData data = entry.getValue();
@@ -225,7 +224,23 @@ public class ChunkCropManager {
             WildCrops.getInstance().getLogger().info("Chunk crop data dump written to " + dumpFile.getAbsolutePath());
         } catch (IOException ex) {
             WildCrops.getInstance().getLogger().severe("Error writing chunk crop data dump: " + ex.getMessage());
-            ex.printStackTrace();
         }
+    }
+
+    /**
+     * Overwrite the serialized CropData for one block.
+     */
+    public static void updateCropData(Block block, CropData data) {
+        Chunk chunk = block.getChunk();
+        PersistentDataContainer container = chunk.getPersistentDataContainer();
+
+        String dataStr = container.get(CHUNK_CROPS_KEY, PersistentDataType.STRING);
+        Map<String, CropData> map = deserializeCropMap(dataStr);
+
+        String key = getRelativeKey(block);
+        map.put(key, data);
+
+        String serialized = serializeCropMap(map);
+        container.set(CHUNK_CROPS_KEY, PersistentDataType.STRING, serialized);
     }
 }

@@ -1,15 +1,18 @@
 package me.monoto.customseeds.listeners;
 
 import io.papermc.paper.event.block.BlockBreakBlockEvent;
+import me.monoto.customseeds.WildCrops;
+import me.monoto.customseeds.crops.CropGrowthScheduler;
 import me.monoto.customseeds.services.CropService;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.world.StructureGrowEvent;
 
 public class CropBlockListener implements Listener {
-    private final CropService service = new CropService();
+    private final CropService service = new CropService(new CropGrowthScheduler(WildCrops.getInstance()));
 
     @EventHandler
     public void onBreak(BlockBreakEvent e) {
@@ -34,6 +37,21 @@ public class CropBlockListener implements Listener {
     @EventHandler
     public void onGrow(BlockGrowEvent e) {
         service.onGrow(e);
+    }
+
+    @EventHandler
+    public void onStructureGrow(StructureGrowEvent e) {
+        service.onStructureGrow(e);
+    }
+
+    @EventHandler
+    public void onLeavesDecay(LeavesDecayEvent e) {
+        service.onLeavesDecay(e);
+    }
+
+    @EventHandler
+    public void onBlockFade(BlockFadeEvent e) {
+        service.onBlockFade(e);
     }
 
     @EventHandler

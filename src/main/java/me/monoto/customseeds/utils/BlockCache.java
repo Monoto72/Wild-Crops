@@ -2,12 +2,11 @@ package me.monoto.customseeds.utils;
 
 import org.bukkit.Material;
 import org.bukkit.Tag;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class BlockCache {
     /*
@@ -15,6 +14,8 @@ public class BlockCache {
      * Might need to be updated if new blocks are added in the future.
      * Currently a hacky solution, but it works. Though holds the main thread for a bit.
      */
+
+    private static final ExecutorService EXEC = Executors.newSingleThreadExecutor(r -> new Thread(r, "BlockCache"));
 
     private static final Set<Material> DISALLOWED_BLOCKS = Set.of(
             Material.BEDROCK, Material.BARRIER, Material.COMMAND_BLOCK,
@@ -28,51 +29,108 @@ public class BlockCache {
             Material.WHEAT_SEEDS, Material.NETHER_WART, Material.COCOA_BEANS
     );
 
-    private static List<Material> placeableItems = List.of();
 
-    public static void load() {
-        Set<Material> result = new HashSet<>();
+    private static final CompletableFuture<Cache> CACHE_FUTURE =
+            CompletableFuture.supplyAsync(BlockCache::computeAll, EXEC);
 
-        List<Tag<Material>> allowedTags = List.of(
-                Tag.CROPS, Tag.SAPLINGS, Tag.LOGS, Tag.LEAVES,
-                Tag.DIRT, Tag.FLOWERS, Tag.WOOL
-        );
-        allowedTags.forEach(tag -> result.addAll(tag.getValues()));
-
-        for (Material mat : Material.values()) {
-            if (!mat.isBlock() || mat.name().startsWith("LEGACY_") || DISALLOWED_BLOCKS.contains(mat)) continue;
-            Material safeItem = resolveItemEquivalent(mat);
-            if (safeItem != null) result.add(safeItem);
-        }
-
-        placeableItems = result.stream()
-                .sorted(Comparator.comparing(Enum::name))
-                .toList();
+    // simple data holder
+    public record Cache(
+            List<Material> placeables,
+            List<Material> drops,
+            List<Material> crops
+    ) {
     }
 
-    private static Material resolveItemEquivalent(Material mat) {
-        return switch (mat) {
-            case BEETROOTS -> Material.BEETROOT_SEEDS;
-            case CARROTS -> Material.CARROT;
-            case POTATOES -> Material.POTATO;
-            case WHEAT -> Material.WHEAT_SEEDS;
-            case COCOA -> Material.COCOA_BEANS;
-            case NETHER_WART -> Material.NETHER_WART;
-            default -> {
-                try {
-                    yield ItemStack.of(mat).getType();
-                } catch (IllegalArgumentException e) {
-                    yield null;
-                }
-            }
-        };
+    public static CompletableFuture<Cache> initAsync() {
+        return CACHE_FUTURE;
+    }
+
+    public static Cache getCache() {
+        return CACHE_FUTURE.join();
     }
 
     public static List<Material> getPlaceableItems() {
-        return placeableItems;
+        return getCache().placeables();
+    }
+
+    public static List<Material> getAllDrops() {
+        return getCache().drops();
     }
 
     public static List<Material> getCrops() {
-        return ALLOWED_CROPS;
+        return getCache().crops();
+    }
+
+    private static Cache computeAll() {
+        Set<Material> placeSet = new HashSet<>();
+        Set<Material> dropSet = new HashSet<>();
+
+        Set<Material> tagged = new HashSet<>();
+        Tag<Material>[] tags = new Tag[]{
+                Tag.CROPS, Tag.SAPLINGS, Tag.LOGS,
+                Tag.LEAVES, Tag.DIRT, Tag.FLOWERS, Tag.WOOL
+        };
+        for (Tag<Material> tag : tags) {
+            for (Material m : tag.getValues()) {
+                tagged.add(m);
+            }
+        }
+
+        for (Material m : Material.values()) {
+            if (m.isItem() && m != Material.AIR && m != Material.VOID_AIR) {
+                dropSet.add(m);
+            }
+
+            if (tagged.contains(m) || (m.isBlock() && !DISALLOWED_BLOCKS.contains(m))) {
+                Material safe = resolve(m);
+                if (safe != null) {
+                    placeSet.add(safe);
+                }
+            }
+        }
+
+        Comparator<Material> byName = Comparator.comparing(Enum::name);
+        List<Material> placeables = new ArrayList<>(placeSet);
+        placeables.sort(byName);
+
+        List<Material> drops = new ArrayList<>(dropSet);
+        drops.sort(byName);
+
+        List<Material> crops = new ArrayList<>(ALLOWED_CROPS);
+        crops.sort(byName);
+
+        return new Cache(placeables, drops, crops);
+    }
+
+
+    private static final Map<Material, Material> BI_MAP;
+
+    static {
+        Map<Material, Material> m = new EnumMap<>(Material.class);
+        m.put(Material.BEETROOTS, Material.BEETROOT_SEEDS);
+        m.put(Material.BEETROOT_SEEDS, Material.BEETROOTS);
+        m.put(Material.CARROTS, Material.CARROT);
+        m.put(Material.CARROT, Material.CARROTS);
+        m.put(Material.POTATOES, Material.POTATO);
+        m.put(Material.POTATO, Material.POTATOES);
+        m.put(Material.WHEAT, Material.WHEAT_SEEDS);
+        m.put(Material.WHEAT_SEEDS, Material.WHEAT);
+        m.put(Material.COCOA, Material.COCOA_BEANS);
+        m.put(Material.COCOA_BEANS, Material.COCOA);
+        m.put(Material.NETHER_WART, Material.NETHER_WART);
+
+        BI_MAP = Collections.unmodifiableMap(m);
+    }
+
+    public static Material resolve(Material mat) {
+        return BI_MAP.getOrDefault(mat, mat);
+    }
+
+
+    /**
+     * Call this from onDisable() so the executor cleanly shuts down.
+     */
+    public static void shutdown() {
+        EXEC.shutdownNow();
     }
 }

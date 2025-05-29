@@ -21,7 +21,7 @@ public class FileManager {
     private final Map<String, CropConfigData> cropData = new HashMap<>();
     private static final Set<String> usedUUIDs = new HashSet<>();
     // Default crop filenames to copy on first run
-    private final List<String> defaultCrops = Arrays.asList("coal.yml");
+    private final List<String> defaultCrops = List.of("coal.yml");
 
     public FileManager(WildCrops plugin) {
         this.plugin = plugin;
@@ -62,7 +62,9 @@ public class FileManager {
         // ensure internal id
         String id = cfg.getString("id");
         if (id == null || id.isEmpty() || usedUUIDs.contains(id.toLowerCase())) {
-            do { id = UUID.randomUUID().toString(); }
+            do {
+                id = UUID.randomUUID().toString();
+            }
             while (usedUUIDs.contains(id.toLowerCase()));
             cfg.set("id", id);
         }
@@ -103,25 +105,21 @@ public class FileManager {
         cfg.set("lore", cfg.getStringList("item.lore"));
 
         // options
-        cfg.set("options.bonemeal", cfg.getBoolean("bonemeal", false));
-        List<String> placeOn = cfg.contains("can_be_placed_on")
-                ? cfg.getStringList("can_be_placed_on")
-                : Collections.singletonList("FARMLAND");
-        cfg.set("options.place_on", placeOn);
+        cfg.set("settings.bone_meal", cfg.getBoolean("bone_meal", false));
 
         // growth
         // String cropType = seedMat.replaceAll("_SEEDS?$", "").toUpperCase();
-        cfg.set("growth.final_block", "FERN");
+        cfg.set("settings.final_block", "FERN");
 
         // rewards
-        List<Map<String,Object>> rewards = new ArrayList<>();
-        Map<String,Object> seedReward = new HashMap<>();
+        List<Map<String, Object>> rewards = new ArrayList<>();
+        Map<String, Object> seedReward = new HashMap<>();
         seedReward.put("type", "seed");
         seedReward.put("chance", "100%");
         seedReward.put("amount", cfg.getString("drops.seed.amount", "1"));
         rewards.add(seedReward);
-        for (Map<?,?> entry : cfg.getMapList("drops.item")) {
-            Map<String,Object> r = new HashMap<>();
+        for (Map<?, ?> entry : cfg.getMapList("drops.item")) {
+            Map<String, Object> r = new HashMap<>();
             r.put("type", "item");
             r.put("chance", "100%");
             r.put("material", entry.get("material"));
@@ -265,28 +263,26 @@ public class FileManager {
                 "<gray>Place it on",
                 "<dark_gray>farmland <gray>to plant it."
         ));
-        cfg.set("options.bonemeal", true);
-        cfg.set("options.place_on", Collections.singletonList("FARMLAND"));
-
-        // Growth
-        cfg.set("grow_time", 15);              // seconds
-        cfg.set("growth.final_block", "FERN"); // default to fern
-        // omit final_block so it defaults to the same as growth.crop
+        cfg.set("settings.bone_meal", false);
+        cfg.set("settings.final_block", "OAK_SAPLING");
+        cfg.set("settings.auto_replant", false);
+        cfg.set("settings.min_light_level", 8);
+        cfg.set("settings.grow_time", 15);
 
         // Rewards
-        List<Map<String,Object>> rewards = new ArrayList<>();
+        List<Map<String, Object>> rewards = new ArrayList<>();
 
-        Map<String,Object> seedR = new HashMap<>();
-        seedR.put("type",   "seed");
+        Map<String, Object> seedR = new HashMap<>();
+        seedR.put("type", "seed");
         seedR.put("chance", "100%");
         seedR.put("amount", "1-3");
         rewards.add(seedR);
 
-        Map<String,Object> itemR = new HashMap<>();
-        itemR.put("type",     "item");
-        itemR.put("chance",   "100%");
+        Map<String, Object> itemR = new HashMap<>();
+        itemR.put("type", "item");
+        itemR.put("chance", "100%");
         itemR.put("material", "APPLE");
-        itemR.put("amount",   "1-3");
+        itemR.put("amount", "1-3");
         rewards.add(itemR);
 
         cfg.set("rewards", rewards);

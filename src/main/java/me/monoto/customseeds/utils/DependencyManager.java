@@ -1,6 +1,5 @@
 package me.monoto.customseeds.utils;
 
-import com.bgsoftware.superiorskyblock.api.SuperiorSkyblockAPI;
 import me.monoto.customseeds.WildCrops;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -26,11 +25,11 @@ public final class DependencyManager {
                 econ = rsp.getProvider();
                 plugin.getLogger().info("Vault economy hooked: " + econ.getName());
             } else {
-                plugin.getLogger().warning("Vault not found — in-game money disabled");
+                plugin.getLogger().warning("Vault not found - in-game money disabled");
             }
         } catch (NoClassDefFoundError e) {
             // Vault API classes aren’t even on the classpath
-            plugin.getLogger().warning("Vault API missing — skipping economy integration");
+            plugin.getLogger().warning("Vault API missing - skipping economy integration");
         }
     }
 

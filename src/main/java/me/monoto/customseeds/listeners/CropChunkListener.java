@@ -41,7 +41,7 @@ public class CropChunkListener implements Listener {
         crops.forEach((key, data) -> {
             Block block = ChunkCropManager.getBlockFromKey(chunk, key);
             Crop crop = Crop.fromBlock(block, data);
-            if (crop != null && !crop.getData().isFullyGrown()) {
+            if (crop != null && !crop.data().isFullyGrown()) {
                 scheduler.scheduleCropGrowth(crop);
             }
         });

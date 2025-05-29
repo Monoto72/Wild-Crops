@@ -3,15 +3,15 @@ package me.monoto.customseeds;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import me.monoto.customseeds.crops.CropDefinitionRegistry;
 import me.monoto.customseeds.crops.CropGrowthScheduler;
-import me.monoto.customseeds.listeners.*;
-import me.monoto.customseeds.listeners.menus.*;
+import me.monoto.customseeds.listeners.CropBlockListener;
+import me.monoto.customseeds.listeners.CropChunkListener;
+import me.monoto.customseeds.listeners.CropPlaceListener;
 import me.monoto.customseeds.utils.BlockCache;
 import me.monoto.customseeds.utils.ChatInput.ChatInput;
 import me.monoto.customseeds.utils.DependencyManager;
 import me.monoto.customseeds.utils.FileManager;
 import me.monoto.customseeds.utils.UpdateChecker;
 import org.bstats.bukkit.Metrics;
-import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
 import xyz.xenondevs.invui.InvUI;
 
@@ -48,7 +48,14 @@ public final class WildCrops extends JavaPlugin {
     @Override
     public void onEnable() {
         System.out.println("🕵️ CraftLegacy warning likely coming up next — check stack trace if it does.");
-        BlockCache.load();
+        BlockCache.initAsync()
+                .thenAccept(cache -> getLogger().info("Cache ready: "
+                        + cache.placeables().size() + " placeables, "
+                        + cache.drops().size() + " drops"))
+                .exceptionally(err -> {
+                    getLogger().severe("Failed to build BlockCache: " + err.getMessage());
+                    return null;
+                });
         InvUI.getInstance().setPlugin(this);
 
         int bstatID = 25412;
@@ -79,9 +86,6 @@ public final class WildCrops extends JavaPlugin {
         getServer().getPluginManager().registerEvents(placeListener, this);
         getServer().getPluginManager().registerEvents(new CropBlockListener(), this);
 
-        getServer().getPluginManager().registerEvents(new CropDropsMenuListener(), this);
-        getServer().getPluginManager().registerEvents(new CropTextMenuListener(), this);
-
         (new UpdateChecker(this, spigotID)).getLatestVersion(version -> {
             if (!Objects.equals(getDescription().getVersion(), version)) {
                 getLogger().info("Wild Crops v" + version + " is out! Download it at: https://www.spigotmc.org/resources/wild-crops.123916/");
@@ -94,7 +98,7 @@ public final class WildCrops extends JavaPlugin {
 
     @Override
     public void onDisable() {
-
+        BlockCache.shutdown();
     }
 
 }

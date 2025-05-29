@@ -22,25 +22,44 @@ public class ChatInput {
      * @param player   the player to prompt
      * @param prompt   the message to display to the player
      * @param callback the callback to process the player's input
+     * @param onCancel the action to perform if the player cancels the input
+     *                 <p>
+     *                 This method will soon be deprecated in favor of a more generic Dialog Context Menus from 1.21.6
+     *                 For now we use a cheap hacky way to get the input from the player
      */
-    public void openChatInput(Player player, String prompt, Consumer<String> callback) {
+    public void openChatInput(
+            Player player,
+            String prompt,
+            Consumer<String> callback,
+            Runnable onCancel
+    ) {
         player.closeInventory();
 
         ConversationFactory factory = new ConversationFactory(plugin)
+                .withModality(true)
+                .thatExcludesNonPlayersWithMessage("Only players can answer this!")
+                .withLocalEcho(false)
                 .withFirstPrompt(new StringPrompt() {
                     @Override
                     public @NotNull String getPromptText(@NotNull ConversationContext context) {
-                        return prompt;
+                        return prompt + " (type '!exit' or '!cancel' to go back)";
                     }
 
                     @Override
                     public Prompt acceptInput(@NotNull ConversationContext context, String input) {
+                        // cancel cases:
+                        if (input.equalsIgnoreCase("!exit") || input.equalsIgnoreCase("!cancel")) {
+                            context.getForWhom().sendRawMessage("§cCanceled, returning to menu…");
+                            onCancel.run();
+                            return Prompt.END_OF_CONVERSATION;
+                        }
+                        // normal case:
                         callback.accept(input);
                         return Prompt.END_OF_CONVERSATION;
                     }
-                })
-            .withLocalEcho(false); // Hide player's input from themselves
-        Conversation conversation = factory.buildConversation(player);
-        conversation.begin();
+                });
+
+        Conversation Conversation = factory.buildConversation(player);
+        Conversation.begin();
     }
 }

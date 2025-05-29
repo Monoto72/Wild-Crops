@@ -13,6 +13,15 @@ public class CropData {
         this.cropType = cropType;
     }
 
+    public String debug() {
+        return "CropData{" +
+                "cropType='" + cropType + '\'' +
+                ", progress=" + progress +
+                ", age=" + age +
+                ", fullyGrown=" + fullyGrown +
+                '}';
+    }
+
     public double getProgress() {
         return progress;
     }
