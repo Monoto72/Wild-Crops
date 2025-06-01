@@ -5,7 +5,6 @@ import me.monoto.customseeds.crops.CropConfigData;
 import me.monoto.customseeds.crops.CropDefinition;
 import me.monoto.customseeds.crops.CropDefinitionRegistry;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -24,7 +23,8 @@ public final class ItemManager {
     private static final NamespacedKey CUSTOM_CROP_KEY = new NamespacedKey(WildCrops.getInstance(), "CUSTOM_CROP");
 
     // Prevents instantiation.
-    private ItemManager() {}
+    private ItemManager() {
+    }
 
     /**
      * Creates a custom seed item with the provided crop type and amount.
@@ -67,10 +67,8 @@ public final class ItemManager {
             meta.lore(seedLore);
         }
 
-        // Set custom NBT data if not already present.
         PersistentDataContainer dataContainer = meta.getPersistentDataContainer();
         if (!dataContainer.has(CUSTOM_CROP_KEY, PersistentDataType.STRING)) {
-            // Format the type string: first letter uppercase, rest lowercase.
             String formattedType = key.substring(0, 1).toUpperCase(Locale.ROOT)
                     + key.substring(1).toLowerCase(Locale.ROOT);
             dataContainer.set(CUSTOM_CROP_KEY, PersistentDataType.STRING, formattedType);

@@ -80,11 +80,6 @@ public record Crop(CropDefinition definition, Block block, CropData data) {
         }
     }
 
-    private boolean isOnFarmland() {
-        Block blockBelow = block.getRelative(BlockFace.DOWN);
-        return blockBelow.getType() == Material.FARMLAND;
-    }
-
     public boolean meetsGrowthRequirements() {
         if (!(block.getBlockData() instanceof Ageable)) return false;
 

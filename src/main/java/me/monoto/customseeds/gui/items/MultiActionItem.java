@@ -54,32 +54,31 @@ public class MultiActionItem extends AbstractItem {
 
     @Override
     public @NotNull ItemProvider getItemProvider(@NotNull Player player) {
+        TextColor gray = TextColor.color(0xAAAAAA);
+
         ItemBuilder builder = new ItemBuilder(icon)
                 .setName(name.color(color).decoration(TextDecoration.ITALIC, false));
 
-        for (ClickAction action : actions) {
-            Component prefix = Component.text(ClickAction.humanize(action.clickType) + ": ")
-                    .color(TextColor.color(0xAAAAAA));
+        actions.stream()
+                .map(a -> {
+                    Component line = Component.text(ClickAction.humanize(a.clickType) + ": ")
+                            .color(gray)
+                            .append(a.description.color(gray));
 
-            Component line = prefix.append(
-                    action.description.color(TextColor.color(0xAAAAAA))
-            );
+                    if (a.currentValue != null) {
+                        line = line
+                                .append(Component.text(" (v: ").color(gray))
+                                .append(a.currentValue.color(gray))
+                                .append(Component.text(")").color(gray));
+                    }
 
-            if (action.currentValue != null) {
-                line = line.append(
-                                Component.text(" (v: ")
-                                        .color(TextColor.color(0xAAAAAA))
-                        )
-                        .append(action.currentValue.color(TextColor.color(0xAAAAAA)))
-                        .append(Component.text(")")
-                                .color(TextColor.color(0xAAAAAA)));
-            }
-
-            builder.addLoreLines(line);
-        }
+                    return line;
+                })
+                .forEach(builder::addLoreLines);
 
         return builder;
     }
+
 
     @Override
     public void handleClick(

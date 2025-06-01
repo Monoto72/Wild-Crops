@@ -11,9 +11,14 @@ import me.monoto.customseeds.utils.BlockCache;
 import me.monoto.customseeds.utils.DependencyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Dispenser;
+import org.bukkit.block.data.Ageable;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,12 +27,16 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.StructureGrowEvent;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
 
 public class CropService implements Listener {
     private final boolean hasSkyblock = DependencyManager.isSkyblockEnabled();
     private final CropGrowthScheduler scheduler;
+    private final Random random = new Random();
 
     public CropService(CropGrowthScheduler scheduler) {
         this.scheduler = scheduler;
@@ -172,20 +181,77 @@ public class CropService implements Listener {
 
     @EventHandler
     public void onBoneMealInteract(PlayerInteractEvent e) {
-        if (e.getAction() == Action.RIGHT_CLICK_BLOCK
-                && e.getClickedBlock() != null
-                && CropUtils.isCustomCrop(e.getClickedBlock())) {
-            e.setCancelled(true);
-        }
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        Block clicked = e.getClickedBlock();
+        Player player = e.getPlayer();
+
+        if (clicked == null || !CropUtils.isCustomCrop(clicked)) return;
+        e.setCancelled(true);
+
+        ItemStack handItem = player.getInventory().getItemInMainHand();
+        if (handItem.getType() == Material.BONE_MEAL && handItem.getAmount() > 0) {
+            handItem.setAmount(handItem.getAmount() - 1);
+            player.getInventory().setItemInMainHand(handItem);
+        } else return;
+
+        applyBoneMealEffect(clicked);
     }
 
     @EventHandler
     public void onBoneMealDispense(BlockDispenseEvent e) {
         if (e.getItem().getType() != Material.BONE_MEAL) return;
-        Directional d = (Directional) e.getBlock().getBlockData();
-        Block target = e.getBlock().getRelative(d.getFacing());
-        if (CropUtils.isCustomCrop(target)) {
-            e.setCancelled(true);
+
+        Block source = e.getBlock();
+        BlockData bd = source.getBlockData();
+        if (!(bd instanceof Directional dir)) return;
+
+        Block target = source.getRelative(dir.getFacing());
+        if (!CropUtils.isCustomCrop(target)) return;
+
+        e.setCancelled(true);
+
+        BlockState state = source.getState();
+        if (state instanceof Dispenser dispenser) {
+            Map<Integer, ItemStack> leftovers = dispenser.getInventory()
+                    .removeItem(new ItemStack(Material.BONE_MEAL, 1));
+
+            if (!leftovers.isEmpty()) {
+                dispenser.update();
+                return;
+            }
+
+            dispenser.update();
+            applyBoneMealEffect(target);
+        }
+    }
+
+    private void applyBoneMealEffect(Block cropBlock) {
+        CropData data = CropUtils.getCropData(cropBlock);
+        if (data == null || data.isFullyGrown()) return;
+
+        Crop crop = Crop.fromBlock(cropBlock, data);
+        if (crop == null) return;
+
+        if (!crop.meetsGrowthRequirements()) return;
+
+        Location loc = cropBlock.getLocation();
+        scheduler.cancelGrowth(loc);
+
+        BlockData bd = cropBlock.getBlockData();
+        if (!(bd instanceof Ageable ageable)) return;
+
+        int oldAge = ageable.getAge();
+        int maxAge = ageable.getMaximumAge();
+        if (oldAge >= maxAge) return;
+
+        int bump = 1 + random.nextInt(2);
+        double progressPerStage = (double) crop.definition().getBaseGrowTime() / (maxAge + 1);
+        double totalTicksToAdd = bump * progressPerStage;
+
+        crop.updateGrowth(totalTicksToAdd);
+
+        if (!data.isFullyGrown()) {
+            scheduler.scheduleCropGrowth(crop);
         }
     }
 

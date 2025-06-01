@@ -51,14 +51,14 @@ public class CropDefinition {
         this.cropType = cropType;
         this.seedMaterial = seedMaterial;
         this.displayName = displayName;
-        this.lore = Collections.unmodifiableList(new ArrayList<>(lore));
+        this.lore = List.copyOf(lore);
         this.bonemeal = bonemeal;
         this.autoReplant = autoReplant;
         this.baseGrowTime = baseGrowTime;
         this.finalBlock = (finalBlock != null ? finalBlock : Material.FERN);
         this.placement = placement;
         this.minLight = minLight;
-        this.rewards = Collections.unmodifiableList(new ArrayList<>(rewards));
+        this.rewards = List.copyOf(rewards);
         this.rewardByType = this.rewards.stream()
                 .collect(Collectors.toUnmodifiableMap(
                         Reward::type,

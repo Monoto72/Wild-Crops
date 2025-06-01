@@ -1,20 +1,22 @@
 package me.monoto.customseeds;
 
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import me.monoto.customseeds.commands.CommandBase;
 import me.monoto.customseeds.crops.CropDefinitionRegistry;
 import me.monoto.customseeds.crops.CropGrowthScheduler;
 import me.monoto.customseeds.listeners.CropBlockListener;
 import me.monoto.customseeds.listeners.CropChunkListener;
 import me.monoto.customseeds.listeners.CropPlaceListener;
-import me.monoto.customseeds.utils.BlockCache;
+import me.monoto.customseeds.utils.*;
 import me.monoto.customseeds.utils.ChatInput.ChatInput;
-import me.monoto.customseeds.utils.DependencyManager;
-import me.monoto.customseeds.utils.FileManager;
-import me.monoto.customseeds.utils.UpdateChecker;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.Bukkit;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import xyz.xenondevs.invui.InvUI;
 
+import java.util.List;
 import java.util.Objects;
 
 public final class WildCrops extends JavaPlugin {
@@ -45,9 +47,16 @@ public final class WildCrops extends JavaPlugin {
         this.newVersion = value;
     }
 
+    private static final List<PermDefinition> PERMISSIONS = List.of(
+            new PermDefinition("wildcrops.admin", "Allows access to admin commands and features", PermissionDefault.OP),
+            new PermDefinition("wildcrops.settings", "Allows interaction with crops", PermissionDefault.OP),
+            new PermDefinition("wildcrops.reload", "Allows placing crops", PermissionDefault.OP),
+            new PermDefinition("wildcrops.give", "Allows harvesting crops", PermissionDefault.OP),
+            new PermDefinition("wildcrops.version", "Shows the current version", PermissionDefault.FALSE)
+    );
+
     @Override
     public void onEnable() {
-        System.out.println("🕵️ CraftLegacy warning likely coming up next — check stack trace if it does.");
         BlockCache.initAsync()
                 .thenAccept(cache -> getLogger().info("Cache ready: "
                         + cache.placeables().size() + " placeables, "
@@ -74,9 +83,8 @@ public final class WildCrops extends JavaPlugin {
 
         CropDefinitionRegistry.load(fileManager.getCropDataMap());
 
-        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-            commands.registrar().register(WildCropsCommand.commandRoot.build());
-        });
+        new CommandBase(this);
+        registerPermissions();
 
         CropGrowthScheduler scheduler = new CropGrowthScheduler(this);
         CropChunkListener chunkListener = new CropChunkListener(scheduler);
@@ -101,4 +109,14 @@ public final class WildCrops extends JavaPlugin {
         BlockCache.shutdown();
     }
 
+    private void registerPermissions() {
+        PluginManager pm = Bukkit.getPluginManager();
+
+        for (PermDefinition pd : PERMISSIONS) {
+            if (pm.getPermission(pd.getNode()) == null) {
+                Permission perm = new Permission(pd.getNode(), pd.getDescription(), pd.getDefaultValue());
+                pm.addPermission(perm);
+            }
+        }
+    }
 }
