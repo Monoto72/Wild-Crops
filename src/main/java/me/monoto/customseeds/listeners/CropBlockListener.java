@@ -4,6 +4,7 @@ import io.papermc.paper.event.block.BlockBreakBlockEvent;
 import me.monoto.customseeds.WildCrops;
 import me.monoto.customseeds.crops.CropGrowthScheduler;
 import me.monoto.customseeds.services.CropService;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
@@ -78,9 +79,13 @@ public class CropBlockListener implements Listener {
 
     @EventHandler
     public void onBlockDispense(BlockDispenseEvent e) {
-        service.onBoneMealDispense(e);
+        Material mat = e.getItem().getType();
+
+        if (mat == Material.BONE_MEAL) {
+            service.onBoneMealDispense(e);
+        } else if (mat == Material.WATER_BUCKET || mat == Material.LAVA_BUCKET) {
+            service.onLiquidBucketDispense(e);
+        }
     }
-
-
 }
 

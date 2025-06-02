@@ -31,90 +31,124 @@ public class CropUtils {
     public static void processCropDrops(Block block, CropData data, boolean forcedBreak, Player player, boolean subtractReplant) {
         CropDefinition def = CropDefinitionRegistry.get(data.getCropType());
         if (def == null) return;
+
+        if (forcedBreak) {
+            subtractReplant = false;
+        }
+
         Location loc = block.getLocation().toCenterLocation();
 
-        if (forcedBreak || !data.isFullyGrown()) {
+        if (!data.isFullyGrown()) {
             if (!subtractReplant) {
-                ItemStack seedR = ItemManager.getSeed(data.getCropType(), 1);
-                block.getWorld().dropItemNaturally(loc, seedR);
+                ItemStack seedDrop = ItemManager.getSeed(data.getCropType(), 1);
+                block.getWorld().dropItemNaturally(loc, seedDrop);
             }
-        } else {
-            for (CropDefinition.Reward reward : def.getRewards()) {
-                double roll = ThreadLocalRandom.current().nextDouble();
-                if (roll > reward.chance()) continue;
+            block.setType(Material.AIR);
+            return;
+        }
 
-                String type = reward.type();
-                Range<Integer> range = reward.amount();
-                int amount = range != null
-                        ? ThreadLocalRandom.current().nextInt(range.getMinimum(), range.getMaximum() + 1)
-                        : 0;
+        boolean allowPlayerRewards = (player != null);
 
-                if (amount == 0) continue;
+        for (CropDefinition.Reward reward : def.getRewards()) {
+            double roll = ThreadLocalRandom.current().nextDouble();
+            if (roll > reward.chance()) continue;
 
-                switch (type) {
-                    case "seed": {
-                        int dropCount = subtractReplant ? Math.max(amount - 1, 0) : amount;
-                        if (dropCount > 0) {
-                            ItemStack seedR = ItemManager.getSeed(data.getCropType(), dropCount);
-                            block.getWorld().dropItemNaturally(loc, seedR);
-                        }
+            Range<Integer> range = reward.amount();
+            int amount = (range != null)
+                    ? ThreadLocalRandom.current().nextInt(range.getMinimum(), range.getMaximum() + 1)
+                    : 0;
+            if (amount == 0) continue;
+
+            switch (reward.type()) {
+                case "seed":
+                    handleSeedReward(loc, data.getCropType(), amount, subtractReplant);
+                    break;
+
+                case "item":
+                    handleItemReward(loc, reward.material(), amount);
+                    break;
+
+                case "exp":
+                    if (!allowPlayerRewards) continue;
+                    handleExpReward(loc, amount);
+                    break;
+
+                case "mcmmo_exp":
+                    if (!allowPlayerRewards || !DependencyManager.isMcMMOEnabled()) continue;
+                    try {
+                        ExperienceAPI.addLevel(player, "Herbalism", amount);
+                    } catch (NoClassDefFoundError e) {
+                        WildCrops.getInstance().getLogger()
+                                .warning("McMMO API missing — skipping mcmmo_exp reward");
                     }
-                    case "item": {
-                        ItemStack itemR = new ItemStack(reward.material(), amount);
-                        block.getWorld().dropItemNaturally(loc, itemR);
-                        break;
-                    }
-                    case "exp": {
-                        block.getWorld().spawn(loc, ExperienceOrb.class, experienceOrb -> experienceOrb.setExperience(amount));
-                        break;
-                    }
-                    case "mcmmo_exp": {
-                        if (DependencyManager.isMcMMOEnabled()) {
-                            try {
-                                ExperienceAPI.addLevel(player, "Herbalism", amount);
-                            } catch (NoClassDefFoundError e) {
-                                WildCrops.getInstance().getLogger().warning("McMMO API missing — skipping mcmmo_exp reward");
-                            }
+                    break;
+
+                case "money":
+                    if (!allowPlayerRewards) continue;
+                    try {
+                        if (DependencyManager.getEcon() != null) {
+                            DependencyManager.getEcon().depositPlayer(player, amount);
                         } else {
-                            WildCrops.getInstance().getLogger().warning("McMMO not available — skipping mcmmo_exp reward");
+                            WildCrops.getInstance().getLogger()
+                                    .warning("Vault economy not available — skipping money reward");
                         }
-                        break;
+                    } catch (NoClassDefFoundError e) {
+                        WildCrops.getInstance().getLogger()
+                                .warning("Vault API missing — skipping money reward");
                     }
-                    case "money": {
-                        try {
-                            if (DependencyManager.getEcon() != null) {
-                                DependencyManager.getEcon().depositPlayer(player, amount);
-                            } else {
-                                WildCrops.getInstance().getLogger().warning("Vault economy not available — skipping money reward");
-                            }
-                        } catch (NoClassDefFoundError e) {
-                            WildCrops.getInstance().getLogger().warning("Vault API missing — skipping money reward");
+                    break;
+
+                case "command":
+                    if (!allowPlayerRewards) continue;
+                    if (reward.commands() != null) {
+                        for (String cmd : reward.commands()) {
+                            String toRun = cmd.replace("{player}", player.getName());
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), toRun);
                         }
-                        break;
                     }
-                    case "command": {
-                        if (reward.commands() != null) {
-                            for (String cmd : reward.commands()) {
-                                String toRun = cmd.replace("{player}", player.getName());
-                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), toRun);
-                            }
-                        }
-                        break;
-                    }
-                    default:
-                        WildCrops.getInstance().getLogger().warning("Unknown crop type: " + type);
-                }
+                    break;
+
+                default:
+                    WildCrops.getInstance().getLogger()
+                            .warning("Unknown crop reward type: " + reward.type());
             }
         }
 
         block.setType(Material.AIR);
     }
 
+
     /**
      * Overload for non-player breaks (e.g. piston, water)
      */
     public static void processCropDrops(Block block, CropData data, boolean forcedBreak) {
         processCropDrops(block, data, forcedBreak, null, false);
+    }
+
+    /**
+     * Drops seeds, accounting for subtractReplant.
+     */
+    private static void handleSeedReward(Location loc, String cropType, int amount, boolean subtractReplant) {
+        int dropCount = subtractReplant ? Math.max(amount - 1, 0) : amount;
+        if (dropCount > 0) {
+            ItemStack seedStack = ItemManager.getSeed(cropType, dropCount);
+            loc.getWorld().dropItemNaturally(loc, seedStack);
+        }
+    }
+
+    /**
+     * Drops a plain ItemStack at loc.
+     */
+    private static void handleItemReward(Location loc, Material mat, int amount) {
+        ItemStack stack = new ItemStack(mat, amount);
+        loc.getWorld().dropItemNaturally(loc, stack);
+    }
+
+    /**
+     * Spawns a vanilla experience orb at loc.
+     */
+    private static void handleExpReward(Location loc, int amount) {
+        loc.getWorld().spawn(loc, ExperienceOrb.class, orb -> orb.setExperience(amount));
     }
 
     /**

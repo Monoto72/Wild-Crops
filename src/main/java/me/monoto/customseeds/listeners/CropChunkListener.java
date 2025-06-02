@@ -5,6 +5,7 @@ import me.monoto.customseeds.crops.Crop;
 import me.monoto.customseeds.crops.CropData;
 import me.monoto.customseeds.crops.CropGrowthScheduler;
 import org.bukkit.Chunk;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,7 +20,7 @@ public class CropChunkListener implements Listener {
     public CropChunkListener(CropGrowthScheduler scheduler) {
         this.scheduler = scheduler;
 
-        for (var world : scheduler.getPlugin().getServer().getWorlds()) {
+        for (World world : scheduler.getPlugin().getServer().getWorlds()) {
             for (Chunk c : world.getLoadedChunks()) {
                 loadChunkCrops(c);
             }

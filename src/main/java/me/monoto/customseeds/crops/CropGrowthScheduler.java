@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Map;
@@ -43,11 +44,16 @@ public class CropGrowthScheduler {
                 return;
             }
 
+            BlockData currentData = crop.block().getBlockData();
+            if (!(currentData instanceof Ageable currentAgeable)) {
+                ChunkCropManager.removeCrop(crop.block().getChunk(), crop.block());
+                return;
+            }
+
+            // 4) Check growth requirements (soil + light)
             if (crop.meetsGrowthRequirements()) {
-                if (crop.block().getBlockData() instanceof Ageable currentAgeable) {
-                    double progressPerStage = (double) totalGrowTime / (currentAgeable.getMaximumAge() + 1);
-                    crop.updateGrowth(progressPerStage);
-                }
+                double progressPerStage = (double) totalGrowTime / (currentAgeable.getMaximumAge() + 1);
+                crop.updateGrowth(progressPerStage);
             }
 
             if (!crop.data().isFullyGrown()) {
