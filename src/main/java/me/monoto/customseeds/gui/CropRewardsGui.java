@@ -243,7 +243,6 @@ public class CropRewardsGui {
         CropDefinition newDef = CropDefinition.fromConfig(data.getFileNameWithoutExtension(), cfg);
         CropDefinitionRegistry.update(cropId, newDef);
 
-        player.sendMessage(Component.text("✅ Changes saved!"));
         Bukkit.getScheduler().runTask(WildCrops.getInstance(), () -> WindowHistory.replace(player, () -> this.createWindow(player)));
     }
 

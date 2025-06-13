@@ -2,6 +2,7 @@ package me.monoto.customseeds.gui.items;
 
 import me.monoto.customseeds.gui.windows.BlockSearchWindow;
 import me.monoto.customseeds.utils.ClickAction;
+import me.monoto.customseeds.utils.WindowHistory;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -82,12 +83,8 @@ public class BlockSelectorItem extends AbstractItem {
     ) {
         BiConsumer<Player, Material> boundSelect = (ignored, mat) -> onSelect.accept(player, mat);
 
-        BlockSearchWindow.open(
-                player,
-                color,
-                allowedMaterials,
-                boundSelect
+        WindowHistory.replace(player, () ->
+                BlockSearchWindow.createWindow(player, color, allowedMaterials, boundSelect)
         );
-        notifyWindows();
     }
 }
