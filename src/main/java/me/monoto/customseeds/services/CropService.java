@@ -210,7 +210,14 @@ public class CropService implements Listener {
         Player player = e.getPlayer();
 
         if (clicked == null || !isTrackedCrop(clicked)) return;
+
+        CropData data = CropUtils.getCropData(clicked);
+        if (data == null || data.isFullyGrown()) return;
+
+        Crop crop = Crop.fromBlock(clicked, data);
+        if (crop == null) return;
         e.setCancelled(true);
+        if (!crop.definition().isBonemealAllowed()) return;
 
         ItemStack handItem = player.getInventory().getItemInMainHand();
         if (handItem.getType() == Material.BONE_MEAL && handItem.getAmount() > 0) {
@@ -220,7 +227,7 @@ public class CropService implements Listener {
             return;
         }
 
-        applyBoneMealEffect(clicked);
+        applyBoneMealEffect(clicked, data, crop);
     }
 
     @EventHandler
@@ -232,7 +239,14 @@ public class CropService implements Listener {
         Block target = source.getRelative(dir.getFacing());
         if (!isTrackedCrop(target)) return;
 
+        CropData data = CropUtils.getCropData(source);
+        if (data == null || data.isFullyGrown()) return;
+
+        Crop crop = Crop.fromBlock(source, data);
+        if (crop == null) return;
+
         e.setCancelled(true);
+        if (!crop.definition().isBonemealAllowed()) return;
 
         BlockState state = source.getState();
         if (state instanceof Dispenser dispenser) {
@@ -245,19 +259,12 @@ public class CropService implements Listener {
             }
 
             dispenser.update();
-            applyBoneMealEffect(target);
+            applyBoneMealEffect(source, data, crop);
         }
     }
 
-    private void applyBoneMealEffect(Block cropBlock) {
-        CropData data = CropUtils.getCropData(cropBlock);
-        if (data == null || data.isFullyGrown()) return;
-
-        Crop crop = Crop.fromBlock(cropBlock, data);
-        if (crop == null) return;
-
+    private void applyBoneMealEffect(Block cropBlock, CropData data, Crop crop) {
         if (!crop.meetsGrowthRequirements()) return;
-
         Location loc = cropBlock.getLocation();
         scheduler.cancelGrowth(loc);
 
@@ -290,7 +297,7 @@ public class CropService implements Listener {
 
         Block target = source.getRelative(dir.getFacing());
         if (!isTrackedCrop(target)) return;
-        
+
         handleBreak(target, true, null);
     }
 
