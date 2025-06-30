@@ -9,6 +9,7 @@ import me.monoto.customseeds.WildCrops;
 import me.monoto.customseeds.crops.*;
 import me.monoto.customseeds.utils.BlockCache;
 import me.monoto.customseeds.utils.DependencyManager;
+import me.monoto.statistics.Statistics;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -97,6 +98,10 @@ public class CropService implements Listener {
 
         CropUtils.removeCrop(cropBlock);
         CropUtils.processCropDrops(cropBlock, data, forced, player, willAutoReplant);
+
+        if (player != null && DependencyManager.isStatisticsEnabled()) {
+            Statistics.getInstance().getStatisticsAPI().incrementCustomCropStat(player, def.getId(), def.getDisplayName(), def.getFinalBlock());
+        }
 
         if (willAutoReplant) {
             Chunk originalChunk = cropBlock.getRelative(BlockFace.DOWN).getChunk();

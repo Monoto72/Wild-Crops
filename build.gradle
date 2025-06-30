@@ -10,6 +10,12 @@ description = 'Wild Crops'
 
 repositories {
     mavenCentral()
+    mavenLocal()
+
+    flatDir {
+        dirs 'libs'
+    }
+
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
     maven { url = 'https://oss.sonatype.org/content/groups/public/' }
     maven { url = 'https://repo.bg-software.com/repository/api/' }
@@ -29,6 +35,8 @@ dependencies {
         exclude group: 'com.sk89q.worldguard', module: 'worldguard-core'
         exclude group: 'com.sk89q.worldguard', module: 'worldguard-legacy'
     }
+    compileOnly files("libs/statistics-2.1-all.jar")
+    compileOnly fileTree(dir: 'libs', include: ['*.jar'])
 }
 
 tasks.withType(JavaCompile).configureEach {
