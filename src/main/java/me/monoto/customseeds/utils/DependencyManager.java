@@ -9,11 +9,13 @@ public final class DependencyManager {
     private static Economy econ = null;
     private static boolean skyblockEnabled;
     private static boolean mcMMOEnabled;
+    private static boolean statisticsEnabled;
 
     public static void setupAll(WildCrops plugin) {
         setupEconomy(plugin);
         setupSkyblock(plugin);
         setupMcMMO(plugin);
+        setupStatistics(plugin);
     }
 
     private static void setupEconomy(WildCrops plugin) {
@@ -31,6 +33,18 @@ public final class DependencyManager {
             // Vault API classes aren’t even on the classpath
             plugin.getLogger().warning("Vault API missing - skipping economy integration");
         }
+    }
+
+    private static void setupStatistics(WildCrops plugin) {
+        statisticsEnabled = plugin.getServer()
+                .getPluginManager()
+                .isPluginEnabled("GlobalStats");
+
+        plugin.getLogger().info(
+                statisticsEnabled
+                        ? "GlobalStats hooked"
+                        : "GlobalStats not found; statistics api push disabled"
+        );
     }
 
     private static void setupSkyblock(WildCrops plugin) {
@@ -64,5 +78,9 @@ public final class DependencyManager {
 
     public static boolean isMcMMOEnabled() {
         return mcMMOEnabled;
+    }
+
+    public static boolean isStatisticsEnabled() {
+        return statisticsEnabled;
     }
 }
