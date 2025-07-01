@@ -39,10 +39,8 @@ public class CropUtils {
         Location loc = block.getLocation().toCenterLocation();
 
         if (!data.isFullyGrown()) {
-            if (!subtractReplant) {
-                ItemStack seedDrop = ItemManager.getSeed(data.getCropType(), 1);
-                block.getWorld().dropItemNaturally(loc, seedDrop);
-            }
+            ItemStack seedDrop = ItemManager.getSeed(data.getCropType(), 1);
+            block.getWorld().dropItemNaturally(loc, seedDrop);
             block.setType(Material.AIR);
             return;
         }
@@ -129,7 +127,12 @@ public class CropUtils {
      * Drops seeds, accounting for subtractReplant.
      */
     private static void handleSeedReward(Location loc, String cropType, int amount, boolean subtractReplant) {
-        int dropCount = subtractReplant ? Math.max(amount - 1, 0) : amount;
+        int dropCount = amount;
+        
+        if (subtractReplant && amount > 1) {
+            dropCount = amount - 1;
+        }
+
         if (dropCount > 0) {
             ItemStack seedStack = ItemManager.getSeed(cropType, dropCount);
             loc.getWorld().dropItemNaturally(loc, seedStack);
