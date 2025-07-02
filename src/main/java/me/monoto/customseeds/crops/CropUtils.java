@@ -128,8 +128,8 @@ public class CropUtils {
      */
     private static void handleSeedReward(Location loc, String cropType, int amount, boolean subtractReplant) {
         int dropCount = amount;
-        
-        if (subtractReplant && amount > 1) {
+
+        if (subtractReplant && amount >= 1) {
             dropCount = amount - 1;
         }
 
