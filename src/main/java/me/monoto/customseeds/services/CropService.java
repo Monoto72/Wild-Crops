@@ -90,7 +90,9 @@ public class CropService implements Listener {
         boolean autoReplantAllowed = def.isAutoReplantAllowed();
         boolean autoReplantPermissible = (player != null && player.hasPermission("wildcrops.autoreplant"));
         boolean sneakBreak = (player != null && player.isSneaking());
-        boolean willAutoReplant = autoReplantAllowed
+        boolean isMature = data.isFullyGrown();
+        boolean willAutoReplant = isMature
+                && autoReplantAllowed
                 && autoReplantPermissible
                 && !forced
                 && !sneakBreak
